@@ -4,14 +4,15 @@
 import streamlit as st
 import pandas as pd
 import duckdb
+import plotly.express as px
 
 
 @st.cache_data
 def import_trains():
-    return pd.read_csv('https://fr.ftp.opendatasoft.com/infrabel/PunctualityHistory/Data_raw_punctuality_202302.csv')
+    # return pd.read_csv('https://fr.ftp.opendatasoft.com/infrabel/PunctualityHistory/Data_raw_punctuality_202302.csv')
     # download locally to improve perf:
     # `wget https://fr.ftp.opendatasoft.com/infrabel/PunctualityHistory/Data_raw_punctuality_202302.csv``
-    # return pd.read_csv('Data_raw_punctuality_202302.csv')
+    return pd.read_csv('Data_raw_punctuality_202302.csv')
 
 
 @st.cache_data
@@ -78,9 +79,15 @@ def prepare_trains(df):
             DATDEP,
             TRAIN_NO,
             RELATION,
+            DELAY_DEP,
+            DELAY_ARR,
+            REAL_DT_ARR,
+            REAL_DT_DEP,
+            PLANNED_DT_ARR,
+            PLANNED_DT_DEP,
             EXTRACT('epoch' FROM (NEXT_REAL_DT_DEP - REAL_DT_DEP)) AS REAL_TIME,
             EXTRACT('epoch' FROM (NEXT_PLANNED_DT_DEP - PLANNED_DT_DEP)) AS PLANNED_TIME,
-            EXTRACT('epoch' FROM (REAL_DT_DEP - PLANNED_DT_DEP)) AS DELAY_DEP,
+            EXTRACT('epoch' FROM (REAL_DT_DEP - PLANNED_DT_DEP)) AS DELAY_DEP_CALC,
             PTCAR_LG_NM_NL || '_' || LINE_NO_DEP AS NODE_1,
             PTCAR_LG_NM_NL AS PTCAR_1,
             LINE_NO_DEP AS LINE_NO_1,
@@ -123,6 +130,33 @@ def get_stats_by_station(df, ptcar='CHARLEROI-CENTRAL'):
         ])['REAL_TIME'].aggregate(['count', 'min', 'median', 'mean', 'max'])
 
 
+def get_delays_by_dow(df, ptcar='CHARLEROI-CENTRAL'):
+    sql = """
+        SELECT
+            DATDEP,
+            TRAIN_NO,
+            PTCAR_1,
+            PTCAR_2,
+            REAL_DT_DEP,
+            EXTRACT('epoch' FROM CAST(REAL_DT_DEP AS TIME)) / 3600.0 AS TIME_DEP,
+            DELAY_DEP,
+            EXTRACT('HOUR' FROM REAL_DT_DEP) AS HOUR,
+            EXTRACT('DOW' FROM REAL_DT_DEP) AS DOW,
+            CASE WHEN EXTRACT('DOW' FROM REAL_DT_DEP) IN (0, 6) THEN 'weekend'
+                 ELSE 'week'
+            END AS DAYTYPE,
+        FROM
+            df
+        WHERE
+            PTCAR_1 = ?
+        ORDER BY
+            6
+    """
+    with duckdb.connect() as con:
+        result = con.execute(sql, [ptcar]).df()
+    return result
+
+
 def get_linked_ptcars(df_trains, df_ptcars_attributes, ptcar='CHARLEROI-CENTRAL'):
     sql = """
         SELECT DISTINCT
@@ -144,8 +178,9 @@ def get_linked_ptcars(df_trains, df_ptcars_attributes, ptcar='CHARLEROI-CENTRAL'
             1
     """
     with duckdb.connect() as con:
-        df_result = con.execute(sql, [ptcar]).df()
-    return df_result
+        result = con.execute(sql, [ptcar]).df()
+    return result
+
 
 df_raw = import_trains()
 df_trains = prepare_trains(df_raw)
@@ -169,8 +204,16 @@ ptcar = st.selectbox('PTCAR', df_ptcars)
 st.write(f"""
     ## Stats for {ptcar}
 """)
-
+         
 st.write(get_stats_by_station(df_trains, ptcar))
+
+
+st.write(f"""
+    ## Delays in {ptcar}
+""")
+
+fig = px.scatter(get_delays_by_dow(df_trains, ptcar), x="TIME_DEP", y="DELAY_DEP", color="DAYTYPE", marginal_x="histogram")
+st.plotly_chart(fig, theme=None, use_container_width=True)
 
 st.write("""
     ## Linked PTCARs
