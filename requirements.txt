@@ -5,3 +5,5 @@ folium
 pyvis
 matplotlib
 pyproj
+jupyter
+jupyterlab
