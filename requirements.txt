@@ -1,0 +1,7 @@
+pandas
+duckdb
+networkx
+folium
+pyvis
+matplotlib
+pyproj
