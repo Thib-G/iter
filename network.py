@@ -5,6 +5,7 @@ import streamlit as st
 import pandas as pd
 import duckdb
 import plotly.express as px
+from streamlit_agraph import agraph, Node, Edge, Config
 
 
 @st.cache_data
@@ -224,3 +225,40 @@ linked_ptcars = get_linked_ptcars(df_trains, df_ptcars_attributes, ptcar)
 
 st.write(linked_ptcars)
 st.map(data=linked_ptcars)
+
+
+def create_agraph(nodes, edges):
+    n = [
+        Node(
+            id=i,
+            label=node,
+            title=node,
+        )
+        for i, node
+        in nodes
+    ]
+    e = [
+        Edge(
+            source=node_from,
+            label='connects',
+            target=node_to
+        )
+        for node_from, node_to
+        in edges
+    ]
+    config = Config(
+        width=750,
+        height=450,
+        directed=True, 
+        physics=True, 
+        hierarchical=False,
+        # **kwargs
+    )
+
+    return agraph(nodes=n, edges=e, config=config)
+
+
+nodes = [(i, node) for i, node in enumerate([ptcar] + linked_ptcars['longnamefrench'].values.tolist())]
+edges = [(0, i + 1) for i, _ in enumerate(nodes[1:])]
+
+create_agraph(nodes, edges)
