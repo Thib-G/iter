@@ -17,7 +17,8 @@ def import_trains():
 
 @st.cache_data
 def import_ptcars():
-    df = pd.read_json('https://opendata.infrabel.be/api/explore/v2.1/catalog/datasets/operationele-punten-van-het-newterk/exports/json?lang=fr&timezone=Europe%2FBerlin')
+    # df = pd.read_json('https://opendata.infrabel.be/api/explore/v2.1/catalog/datasets/operationele-punten-van-het-newterk/exports/json?lang=fr&timezone=Europe%2FBerlin')
+    df = pd.read_json('operationele-punten-van-het-newterk.json')
     df['lat'] = df['geo_shape'].apply(lambda x: x['geometry']['coordinates'][1])
     df['lon'] = df['geo_shape'].apply(lambda x: x['geometry']['coordinates'][0])
     del df['geo_point_2d']
