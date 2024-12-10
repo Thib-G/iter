@@ -10,10 +10,10 @@ from streamlit_agraph import agraph, Node, Edge, Config
 
 @st.cache_data
 def import_trains():
-    # return pd.read_csv('https://fr.ftp.opendatasoft.com/infrabel/PunctualityHistory/Data_raw_punctuality_202302.csv')
+    # return pd.read_csv('https://fr.ftp.opendatasoft.com/infrabel/PunctualityHistory/Data_raw_punctuality_202411.csv')
     # download locally to improve perf:
-    # `wget https://fr.ftp.opendatasoft.com/infrabel/PunctualityHistory/Data_raw_punctuality_202302.csv``
-    return pd.read_csv('Data_raw_punctuality_202302.csv')
+    # `wget https://fr.ftp.opendatasoft.com/infrabel/PunctualityHistory/Data_raw_punctuality_202411.csv``
+    return pd.read_csv('Data_raw_punctuality_202411.csv')
 
 
 @st.cache_data
