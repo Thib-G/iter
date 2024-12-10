@@ -7,3 +7,5 @@ matplotlib
 pyproj
 jupyter
 jupyterlab
+streamlit
+streamlit_agraph
